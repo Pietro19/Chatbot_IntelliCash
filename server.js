@@ -1,9 +1,15 @@
 // node --version # Should be >= 18
 // npm install @google/generative-ai express
 
-const express = require('express');
-const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
-const dotenv = require('dotenv').config()
+const express = require("express");
+const {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} = require("@google/generative-ai");
+const fs = require("fs");
+const dotenv = require("dotenv").config();
+// const configI = require("./config");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,9 +17,23 @@ app.use(express.json());
 const MODEL_NAME = "gemini-pro";
 const API_KEY = process.env.API_KEY;
 
+// Função para ler o conteúdo de um arquivo de texto
+function readTextFile(filePath) {
+  try {
+    const data = fs.readFileSync(filePath, "utf8");
+    return data;
+  } catch (err) {
+    console.error("Error reading file:", err);
+    return null;
+  }
+}
+
 async function runChat(userInput) {
   const genAI = new GoogleGenerativeAI(API_KEY);
   const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+  // const intelliCash = configI.intelliCash;
+  // const vasilhames = configI.vasilhames;
+  const arquivoTexto = readTextFile("config.txt");
 
   const generationConfig = {
     temperature: 0.9,
@@ -36,19 +56,45 @@ async function runChat(userInput) {
     history: [
       {
         role: "user",
-        parts: [{ text: "You are Sam, a friendly assistant who works for Coding Money. Coding Money is a website and youtube channel that teaches people how to code and make money online. Your job is to capture user's name and email address. Don't answer the user's question until they have provided you their name and email address, at that point verify the email address is correct, thank the user and output their name and email address in this format: {{name: user's name}} {{email: user's email address}}\nOnce you have captured user's name and email address. Answer user's questions related to Coding Money.\nCoding Money's website URL is: https://CodingMoney.com website is coming soon. Coding Money's Youtube Channel URL is: https://youtube.com/CodingMoney Coding Money's Facebook Page is: https://facebook.com/codingmoneycom Coding Money's Tiktok account is: https://tiktok.com/@codingmoneycom Coding Money's X formerly Twitter is: https://x.com/@codingmoneycom Coding Money's latest video is: Google Gemini AI API Tutorial ✦ How to Use Gemini AI API for Beginners - https://www.youtube.com/watch?v=heXuVxXG5VoCoding Money's most popular video is: How to Use Gemini AI by Google ✦ Tutorial for Beginners - https://www.youtube.com/watch?v=btPBE-fjHeg Coding Money's oldest video is: What is Coding Money? Top 3 Ways of Making Money with Coding - https://www.youtube.com/watch?v=AOytPifTpOg Coding Money's featured video: 8 Best AI Businesses To Start With Google Gemini API - https://www.youtube.com/watch?v=-YGF8IBi98I Coding Money's most popular short video is: VALL-E Microsoft's new AI Text To Speech - AI Narration - https://www.youtube.com/shorts/fPSOlZyTOJ4 Mukhtar is the founder of Coding Money. Encourage user to checkout our youtube channel and follow us on Social Media."}],
+        parts: [
+          {
+            text:
+              "Você é uma inteligência artificial generativa com o objetivo de realizar atendimentos de primeiro nível amigável ao usuário, solucionando dúvidas simples e encaminhando automaticamente para um atendimento com Consultor Técnico quando não houver uma resposta para a dúvida do cliente. Os clientes farão perguntas relacionadas aos produtos e funcionalidades da empresa IntelliCash. Você, como assistente virtual, não deve responder perguntas que não estejam relacionadas a IntelliCash e deve responder somente baseado nas informações passadas a você. Você deve responder com respostas dinâmicas e objetivas pois são direcionadas a clientes de todas as idades. Você não deve tentar buscar respostas na internet ou qualquer outro meio. Caso não saiba a resposta para uma pergunta, você deve dizer ao cliente que irá encaminha-lo para um Consultor Técnico." +
+              arquivoTexto,
+          },
+        ],
       },
       {
         role: "model",
-        parts: [{ text: "Hello! Welcome to Coding Money. My name is Sam. What's your name?"}],
+        parts: [
+          {
+            text: "Olá, o meu nome é IntelliBot, Assistente Virtual da IntelliCash. Como posso lhe ajudar hoje?",
+          },
+        ],
       },
       {
         role: "user",
-        parts: [{ text: "Hi"}],
+        parts: [{ text: "Olá" }],
       },
       {
         role: "model",
-        parts: [{ text: "Hi there! Thanks for reaching out to Coding Money. Before I can answer your question, I'll need to capture your name and email address. Can you please provide that information?"}],
+        parts: [
+          {
+            text: "Olá, o meu nome é IntelliBot, Assistente Virtual da IntelliCash. Como posso lhe ajudar hoje?",
+          },
+        ],
+      },
+      {
+        role: "user",
+        parts: [{ text: "Olá, pode me ajudar?" }],
+      },
+      {
+        role: "model",
+        parts: [
+          {
+            text: "Olá, o meu nome é IntelliBot, Assistente Virtual da IntelliCash. Claro que posso lhe ajudar, do que precisa hoje?",
+          },
+        ],
       },
     ],
   });
@@ -58,25 +104,25 @@ async function runChat(userInput) {
   return response.text();
 }
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
 });
-app.get('/loader.gif', (req, res) => {
-  res.sendFile(__dirname + '/loader.gif');
+app.get("/loader.gif", (req, res) => {
+  res.sendFile(__dirname + "/loader.gif");
 });
-app.post('/chat', async (req, res) => {
+app.post("/chat", async (req, res) => {
   try {
     const userInput = req.body?.userInput;
-    console.log('incoming /chat req', userInput)
+    console.log("incoming /chat req", userInput);
     if (!userInput) {
-      return res.status(400).json({ error: 'Invalid request body' });
+      return res.status(400).json({ error: "Invalid request body" });
     }
 
     const response = await runChat(userInput);
     res.json({ response });
   } catch (error) {
-    console.error('Error in chat endpoint:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error in chat endpoint:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
